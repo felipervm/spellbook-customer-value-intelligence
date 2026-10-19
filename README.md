@@ -32,3 +32,21 @@ A static site: serve the root with `python -m http.server 8000`. No external API
 Felipe is interested in **Data / Operations / Data Quality / AI Operations** roles at Spellbook, including roles that may not currently be advertised. The project is a company-relevant work sample, not an application to senior Customer Success or RevOps management roles.
 
 Contact: [LinkedIn](https://www.linkedin.com/in/felipervm) · felipervm22@gmail.com.
+
+
+## Revised presentation and model
+The page uses Spellbook's current public brand: Arizona Mix headings, Söhne body text, dark ink, light product surfaces and orange accents. Official logo, review and drafting imagery are contextual references owned by Spellbook, not proof of endorsement.
+
+`model.js` contains the deterministic generator, classification, filtering and CSV serialization shared by the browser and Node tests. No dependency installation is required. The seed remains 20261019; every 17th row has an explicitly unknown event feed to distinguish missingness from observed zero. Unknown events export as an empty cell with events_status=Unknown.
+
+All quality flags are preserved in the reason code and route to Data/Ops verification before an outreach review. Passing the gate means only that these few fictional rules found no exception; it is not a confidence score or measured customer health. Queue sorting uses decision category and account ID, not predicted risk.
+
+The 35-day age and three-event thresholds are researcher-defined and need internal validation. Product-use counts do not measure legal work quality, customer value, churn probability or readiness for automated messages.
+
+### Verification
+```sh
+node --check model.js
+node --check app.js
+node --test tests/model.test.cjs
+```
+Eight checks cover deterministic records, unknown vs. zero, gate precedence, overlapping reasons, valid categories, 20 segment/outcome combinations, and CSV missingness/escaping.

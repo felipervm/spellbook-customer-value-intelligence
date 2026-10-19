@@ -1,0 +1,12 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const model=require('../model.js');
+const rows=model.generate();
+test('fixed seed produces 360 unique reproducible fictional accounts',()=>{assert.equal(rows.length,360);assert.equal(new Set(rows.map(r=>r.account)).size,360);assert.deepEqual(model.generate(),rows);});
+test('missing feed is not observed zero or an outreach candidate',()=>{const r=model.classify({age:10,events:null,active:0,missing:false,stale:false});assert.equal(r.decision,'Verify data');assert.equal(r.events_status,'Unknown');});
+test('observed zero can become a human onboarding review after the gate',()=>{assert.equal(model.classify({age:10,events:0,active:0,missing:false,stale:false}).decision,'Offer onboarding help');});
+test('all quality flags take precedence over outreach and remain explainable',()=>{const r=model.classify({age:10,events:1,active:0,missing:true,stale:true});assert.equal(r.decision,'Verify data');assert.match(r.reason,/Missing owner/);assert.match(r.reason,/Stale/);assert.match(r.reason,/conflict/);});
+test('every row belongs to exactly one category and active seats are bounded',()=>{for(const r of rows){assert.ok(model.decisions.includes(r.decision));assert.ok(r.active>=0&&r.active<=r.seats);if(r.missing||r.stale||r.events===null||r.events>0&&r.active===0)assert.equal(r.decision,'Verify data');}});
+test('all 20 segment/outcome selections reconcile and honor both filters',()=>{for(const segment of ['all','Solo','Small firm','Mid-market'])for(const decision of ['all',...model.decisions]){const selected=model.select(rows,segment,decision);assert.ok(selected.every(r=>(segment==='all'||r.segment===segment)&&(decision==='all'||r.decision===decision)));assert.equal(model.decisions.reduce((n,d)=>n+selected.filter(r=>r.decision===d).length,0),selected.length);}});
+test('CSV keeps unknown events empty with an explicit status',()=>{const csv=model.toCSV([rows[0]]);assert.match(csv,/,events,events_status,/);assert.match(csv,/,"","Unknown",/);assert.equal(csv.split('\n').length,2);});
+test('CSV escapes quotes and safely represents an empty selection',()=>{assert.match(model.toCSV([{reason:'a "quoted" reason'}]),/a ""quoted"" reason/);assert.equal(model.toCSV([]).split('\n').length,1);});

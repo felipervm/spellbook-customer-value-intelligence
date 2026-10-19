@@ -1,1 +1,24 @@
-const SEED=20261019;let state=SEED;const rand=()=>((state=(1664525*state+1013904223)>>>0)/4294967296);const choose=a=>a[Math.floor(rand()*a.length)];const portfolio=Array.from({length:360},(_,i)=>{const segment=choose(['Solo','Small firm','Mid-market']),age=1+Math.floor(rand()*100),seats=segment==='Solo'?1:segment==='Small firm'?2+Math.floor(rand()*14):15+Math.floor(rand()*56),active=Math.min(seats,Math.floor(rand()*(seats+1))),events=Math.floor(rand()*16),stale=rand()<.115,missing=rand()<.09,contradiction=events>0&&active===0;const decision=missing||stale||contradiction?'Verify data':age<35&&events===0?'Offer onboarding help':age>=35&&events<3?'Share feature guidance':'Monitor';const reason=missing?'Missing owner':stale?'Stale account update':contradiction?'Usage / seats conflict':decision==='Offer onboarding help'?'No first use yet':decision==='Share feature guidance'?'Limited usage sample':'No exception';return {account:'DEMO-'+String(i+1).padStart(3,'0'),segment,age,seats,active,events,stale,missing,decision,reason}});const decisions=['Verify data','Offer onboarding help','Share feature guidance','Monitor'];const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const $=id=>document.getElementById(id);function render(){const a=portfolio.filter(x=>($('segment').value==='all'||x.segment===$('segment').value)&&($('decision').value==='all'||x.decision===$('decision').value));$('accounts').textContent=a.length;$('verify').textContent=a.filter(x=>x.decision==='Verify data').length;$('followup').textContent=a.filter(x=>x.decision==='Offer onboarding help'||x.decision==='Share feature guidance').length;$('monitor').textContent=a.filter(x=>x.decision==='Monitor').length;$('bars').innerHTML=decisions.map(d=>{const n=a.filter(x=>x.decision===d).length;return '<div class="barrow"><div class="barlabel"><span>'+esc(d)+'</span><b>'+n+'</b></div><div class="track"><div class="fill" style="width:'+(a.length?100*n/a.length:0)+'%"></div></div></div>'}).join('');const prio={ 'Verify data':0,'Offer onboarding help':1,'Share feature guidance':2,'Monitor':3};const sorted=[...a].sort((x,y)=>prio[x.decision]-prio[y.decision]);$('rows').innerHTML=sorted.slice(0,10).map(x=>'<tr><td>'+x.account+'</td><td>'+x.segment+'</td><td>'+x.events+' illustrated events / '+x.active+' of '+x.seats+' active seats</td><td>'+x.decision+'</td><td>'+x.reason+'</td></tr>').join('')||'<tr><td colspan="5">No matches. Try another filter.</td></tr>';const cols=['account','segment','age','seats','active','events','stale','missing','decision','reason'];const csv=[cols.join(','),...a.map(x=>cols.map(c=>'"'+String(x[c]).replace(/"/g,'""')+'"').join(','))].join('\n');const dl=$('download');if(dl.dataset.previous)URL.revokeObjectURL(dl.dataset.previous);const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));dl.href=url;dl.dataset.previous=url;}['segment','decision'].forEach(id=>$(id).addEventListener('change',render));render();
+const portfolio = SignalModel.generate();
+const $ = id => document.getElementById(id);
+const esc = value => String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+let previousURL;
+function render(){
+ const segment=$('segment').value, decision=$('decision').value;
+ const selected=SignalModel.select(portfolio,segment,decision);
+ const count=outcome=>selected.filter(r=>r.decision===outcome).length;
+ $('accounts').textContent=selected.length;
+ $('verify').textContent=count('Verify data');
+ $('followup').textContent=count('Offer onboarding help')+count('Share feature guidance');
+ $('monitor').textContent=count('Monitor');
+ $('bars').innerHTML=SignalModel.decisions.map(outcome=>{const n=count(outcome);return '<div class="barrow"><div class="barlabel"><span>'+esc(outcome)+'</span><b>'+n+'</b></div><div class="track"><div class="fill" style="width:'+(selected.length?100*n/selected.length:0)+'%"></div></div></div>';}).join('');
+ const priority={'Verify data':0,'Offer onboarding help':1,'Share feature guidance':2,'Monitor':3};
+ const sorted=[...selected].sort((a,b)=>priority[a.decision]-priority[b.decision]||a.account.localeCompare(b.account));
+ $('rows').innerHTML=sorted.slice(0,10).map(r=>'<tr><td>'+r.account+'</td><td>'+esc(r.segment)+'</td><td>'+(r.events===null?'Unknown event feed':r.events+' illustrative events')+' / '+r.active+' of '+r.seats+' active seats</td><td>'+esc(r.decision)+'</td><td>'+esc(r.reason)+'<br><b>'+esc(r.reviewer)+'</b></td></tr>').join('')||'<tr><td colspan="5">No matches. Try another filter.</td></tr>';
+ $('filter-status').textContent=selected.length+' fictional accounts · '+(segment==='all'?'All segments':segment)+' · '+(decision==='all'?'All outcomes':decision)+' · Counts and CSV use both filters';
+ if(previousURL)URL.revokeObjectURL(previousURL);
+ previousURL=URL.createObjectURL(new Blob([SignalModel.toCSV(selected)],{type:'text/csv;charset=utf-8'}));
+ $('download').href=previousURL;
+ $('download').textContent='Download selected '+selected.length+' records ↗';
+}
+for(const id of ['segment','decision'])$(id).addEventListener('change',render);
+render();
