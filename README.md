@@ -50,3 +50,11 @@ node --check app.js
 node --test tests/model.test.cjs
 ```
 Eight checks cover deterministic records, unknown vs. zero, gate precedence, overlapping reasons, valid categories, 20 segment/outcome combinations, and CSV missingness/escaping.
+
+## Outreach positioning and acceptance criteria
+This is **not** a claim that Spellbook has a data-quality problem or a job application for senior CS/RevOps roles. The intended conversation is whether a junior-to-mid-level Data/Operations contributor could help make customer signals more reliable. The public hiring briefs establish relevance only.
+
+Before sharing externally, verify: all images and public citations resolve; desktop and narrow-mobile layout; both filters and aggregate reconciliation; downloaded CSV matches the active selection and correctly distinguishes unknown events from observed zero; keyboard navigation and visible focus; no actual client data or internal performance claims. The deployed site must be checked after the latest commit propagates.
+
+## Model exclusions
+No churn prediction, retention claim, customer health score, user-level legal content, or automated customer outreach. A record passing the fictional gates only means none of the modeled exceptions fired. Reviewer approval is still mandatory for any hypothetical action.
